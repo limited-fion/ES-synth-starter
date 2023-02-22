@@ -47,6 +47,38 @@ void setOutMuxBit(const uint8_t bitIdx, const bool value) {
       digitalWrite(REN_PIN,LOW);
 }
 
+uint8_t readCols(){
+
+  uint8_t c0 = digitalRead(C0_PIN);
+  uint8_t c1 = digitalRead(C1_PIN);
+  uint8_t c2 = digitalRead(C2_PIN);
+  uint8_t c3 = digitalRead(C3_PIN);
+
+  uint8_t res = (c0 << 3) | (c1 << 2) | (c2 << 1) | c3 ;
+  Serial.println(res, BIN);
+  return res;
+}
+
+void setRows(uint8_t rowIdx){
+
+  digitalWrite(REN_PIN, LOW);
+
+  if (rowIdx == 0)
+  {
+    digitalWrite(RA0_PIN, HIGH);
+  }
+  else if (rowIdx == 1)
+  {
+    digitalWrite(RA1_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(RA2_PIN, HIGH);
+  }
+
+  digitalWrite(REN_PIN, HIGH);
+}
+
 void setup() {
   // put your setup code here, to run once:
 
@@ -84,16 +116,33 @@ void loop() {
   static uint32_t next = millis();
   static uint32_t count = 0;
 
+  uint8_t keys;
+  uint8_t keyArray[7];
+
   if (millis() > next) {
     next += interval;
 
-    //Update display
-    u8g2.clearBuffer();         // clear the internal memory
-    u8g2.setFont(u8g2_font_ncenB08_tr); // choose a suitable font
-    u8g2.drawStr(2,10,"Helllo World!");  // write something to the internal memory
-    u8g2.setCursor(2,20);
-    u8g2.print(count++);
-    u8g2.sendBuffer();          // transfer internal memory to the display
+    for (int i = 0; i < 3; i++)
+    {
+      setRows(i);
+      delayMicroseconds(3);
+      keyArray[i] = readCols();
+
+      //Update display
+      u8g2.clearBuffer();         // clear the internal memory
+      u8g2.setFont(u8g2_font_ncenB08_tr); // choose a suitable font
+      // u8g2.drawStr(2,10,"Helllo World!");  // write something to the internal memory
+      // u8g2.setCursor(2,20);
+      // u8g2.print(keys,BIN); 
+      u8g2.setCursor(2,20);
+      u8g2.print((keyArray[0] << 8) | (keyArray[1] << 4) | keyArray[2], HEX); 
+      u8g2.sendBuffer();          // transfer internal memory to the display
+    }
+
+    
+
+    // int test = digitalRead(C0_PIN);
+    // Serial.println(test);
 
     //Toggle LED
     digitalToggle(LED_BUILTIN);
