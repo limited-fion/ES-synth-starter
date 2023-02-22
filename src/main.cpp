@@ -134,13 +134,12 @@ void loop() {
       // u8g2.drawStr(2,10,"Helllo World!");  // write something to the internal memory
       // u8g2.setCursor(2,20);
       // u8g2.print(keys,BIN); 
-      
+
       u8g2.setCursor(2,20);
       u8g2.print((keyArray[0] << 8) | (keyArray[1] << 4) | keyArray[2], HEX); 
       u8g2.sendBuffer();          // transfer internal memory to the display
     }
 
-    
 
     // int test = digitalRead(C0_PIN);
     // Serial.println(test);
