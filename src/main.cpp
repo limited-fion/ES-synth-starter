@@ -2,6 +2,7 @@
 #include <U8g2lib.h>
 #include <math.h>
 #include <STM32FreeRTOS.h>
+#include <knob.h>
 
 // Pin definitions
 // Row select and enable
@@ -40,6 +41,7 @@ U8G2_SSD1305_128X32_NONAME_F_HW_I2C u8g2(U8G2_R0);
 
 volatile uint32_t currentStepSize = 0;
 volatile uint8_t keyArray[7];
+// volatile uint8_t* keyArray_ptr = keyArray;
 volatile signed int rotationVariable = 0;
 volatile signed int knob3Rotation = 8;
 
@@ -149,6 +151,7 @@ void scanKeysTask(void * pvParameters) {
   static signed int localknob3Rotation = 8;
   const TickType_t xFrequency = 30/portTICK_PERIOD_MS;
   TickType_t xLastWakeTime = xTaskGetTickCount();
+  Knob knob3(3, 8, 0, 8);
   
   while (1) {
     // Serial.println("scan key task loop!");
@@ -163,8 +166,7 @@ void scanKeysTask(void * pvParameters) {
     static uint8_t rotationPrevState = 0;
 
     xSemaphoreTake(keyArrayMutex, portMAX_DELAY);
-    uint8_t key_pressed = (keyArray[0] << 8) | (keyArray[1] << 4) | keyArray[2];
-    uint8_t rotationCurrState = keyArray[3];
+    uint32_t key_pressed = (keyArray[0] << 8) | (keyArray[1] << 4) | keyArray[2];
     xSemaphoreGive(keyArrayMutex);
 
     // Serial.println(key_pressed, BIN);
@@ -216,49 +218,42 @@ void scanKeysTask(void * pvParameters) {
     }
     // Serial.println(localCurrentStepSize);
 
-    uint8_t stateTransition = (rotationPrevState << 2) | rotationCurrState;
-    int saveRotationVar = rotationVariable;
+    // uint8_t stateTransition = (rotationPrevState << 2) | rotationCurrState;
+    // int saveRotationVar = rotationVariable;
+    knob3.updateRotation(keyArray);
+    localknob3Rotation = knob3.getRotation();
+    // switch (stateTransition) {
+    //   case 0b0001:
+    //     rotationVariable = -1;
+    //     Serial.println("Anti-clockwise!!");
+    //     break;
+    //   case 0b1110:
+    //     rotationVariable = -1;
+    //     Serial.println("Anti-clockwise!!");
+    //     break;
+    //   case 0b1011:
+    //     rotationVariable = 1;
+    //     Serial.println("Clockwise!!");
+    //     break;
+    //   case 0b0100:
+    //     rotationVariable = 1;
+    //     Serial.println("Clockwise!!");
+    //     break;
+    //   case 0b0011:
+    //   case 0b0110:
+    //   case 0b1001:
+    //   case 0b1100:
+    //     rotationVariable = saveRotationVar;
+    //     Serial.println("Impossible!!");
+    //     break;
+    //   default: rotationVariable = 0;
+    // }
 
-    switch (stateTransition) {
-      case 0b0001:
-        rotationVariable = -1;
-        Serial.println("Anti-clockwise!!");
-        break;
-      case 0b1110:
-        rotationVariable = -1;
-        Serial.println("Anti-clockwise!!");
-        break;
-      case 0b1011:
-        rotationVariable = 1;
-        Serial.println("Clockwise!!");
-        break;
-      case 0b0100:
-        rotationVariable = 1;
-        Serial.println("Clockwise!!");
-        break;
-      case 0b0011:
-      case 0b0110:
-      case 0b1001:
-      case 0b1100:
-        rotationVariable = saveRotationVar;
-        Serial.println("Impossible!!");
-        break;
-      default: rotationVariable = 0;
-    }
-
-    saveRotationVar = rotationVariable;
-    localknob3Rotation += rotationVariable;
-    localknob3Rotation = std::max(std::min(localknob3Rotation, KNOB_MAX_ROTATION), KNOB_MIN_ROTATION);
+    // saveRotationVar = rotationVariable;
+    // localknob3Rotation += rotationVariable;
+    // localknob3Rotation = std::max(std::min(localknob3Rotation, KNOB_MAX_ROTATION), KNOB_MIN_ROTATION);
     
-    // if (localknob3Rotation < KNOB_MIN_ROTATION) {
-    //   localknob3Rotation = 0;
-    // }
-    // else if (localknob3Rotation > KNOB_MAX_ROTATION) {
-    //   localknob3Rotation = 8;
-    // }
-    rotationPrevState = rotationCurrState;
-
-    // Serial.println(localknob3Rotation);
+    // rotationPrevState = rotationCurrState;
 
     // UBaseType_t ux = uxTaskGetStackHighWaterMark( NULL );
     // Serial.print("stack: ");
